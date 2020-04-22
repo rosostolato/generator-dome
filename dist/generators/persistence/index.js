@@ -3,25 +3,22 @@
 const Generator = require("yeoman-generator");
 const convert = require("xml-js");
 const plur = require("plur");
+const path = require("path");
 const fs = require("fs");
 
 module.exports = class extends Generator {
-  initializing() {
-    const dir = fs.readdirSync(this.destinationPath());
-    this.projFileName = dir.filter(x => x.match(/.*\.csproj$/ig))[0];
-
-    if (!this.projFileName) {
-      this.log("project file was not found!");
-      process.exit(1);
-    }
-  }
-
   async prompting() {
     const answers = await this.prompt([
       {
         type: "input",
+        name: "projectPath",
+        message: "Path to Backend project",
+        default: "ORC.Backend"
+      },
+      {
+        type: "input",
         name: "modelName",
-        message: "The name of the desired model"
+        message: "The name of the desired model",
       },
       {
         type: "input",
@@ -30,6 +27,16 @@ module.exports = class extends Generator {
         store: true
       },
     ]);
+
+    const projPath = path.join(this.destinationPath(), answers.projectPath);
+    this.projFileName = fs.readdirSync(projPath).find(x => x.match(/.*\.csproj$/ig));
+
+    if (!this.projFileName) {
+      this.log("project file was not found!");
+      process.exit(1);
+    }
+
+    this.destinationRoot(projPath);
 
     this.modelName = answers.modelName;
     this.modelNamespace = answers.modelNamespace;
@@ -124,12 +131,7 @@ module.exports = class extends Generator {
   }
 
   _updateProject() {
-    if (!this.projFileName) {
-      this.log("project file was not found");
-      return;
-    }
-
-    const xml = fs.readFileSync(this.destinationPath() + "/" + this.projFileName, "utf8");
+    const xml = fs.readFileSync(this.projFileName, "utf8");
     const projFile = convert.xml2js(xml, {
       compact: true,
       ignoreComment: true,
@@ -143,13 +145,13 @@ module.exports = class extends Generator {
 
     projFile.Project.ItemGroup[compileIndex].Compile.push({
       "_attributes": {
-        Include: this.interfaceFilePath.split("/").join("\\")
+        Include: this._fixPath(this.interfaceFilePath)
       }
     });
 
     projFile.Project.ItemGroup[compileIndex].Compile.push({
       "_attributes": {
-        Include: this.databaseFilePath.split("/").join("\\")
+        Include: this._fixPath(this.databaseFilePath)
       }
     });
 
@@ -164,5 +166,9 @@ module.exports = class extends Generator {
     });
 
     this.fs.write(this.projFileName, newXml);
+  }
+
+  _fixPath(path) {
+    return path.split("/").join("\\");
   }
 };
