@@ -1,7 +1,2 @@
-dist
 node_modules
 package-lock.json
-
-csproj-include/.vs
-csproj-include/bin
-csproj-include/obj

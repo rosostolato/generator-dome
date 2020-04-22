@@ -1,19 +1,21 @@
-"use strict";
-
 const Generator = require("yeoman-generator");
-const convert = require("xml-js");
 const plur = require("plur");
-const fs = require("fs");
 
 module.exports = class extends Generator {
-  initializing() {
-    const dir = fs.readdirSync(this.destinationPath());
-    this.projFileName = dir.filter(x => x.match(/.*\.csproj$/ig))[0];
+  constructor(args, opts) {
+    super(args, opts);
 
-    if (!this.projFileName) {
-      this.log("project file was not found!");
-      process.exit(1);
-    }
+    // This makes `modelName` a required argument.
+    // this.argument("modelName", { type: String, required: true });
+
+    // this.modelName = this.options.modelName;
+    // this.modelPlural = plur(this.modelName);
+    // this.modelClass = `${this.modelName}Persistence`;
+
+    // this.interfaceFilePath = `Persistence/I${this.modelClass}.cs`;
+    // this.databaseFilePath = `Persistence/Database/${this.modelClass}.cs`;
+    // this.domeDatabaseFilePath = "Persistence/Database/DomeDatabasePersistence.cs";
+    // this.domeFilePath = "Persistence/IDomePersistence.cs";
   }
 
   async prompting() {
@@ -44,16 +46,6 @@ module.exports = class extends Generator {
   }
 
   writing() {
-    this._copyTemplates();
-    this._updateProject();
-    this._updateImports();
-  }
-
-  end() {
-    console.log("Dome!");
-  }
-
-  _copyTemplates() {
     this.fs.copyTpl(
       this.templatePath("IPersistence.cs"),
       this.destinationPath(this.interfaceFilePath),
@@ -73,15 +65,13 @@ module.exports = class extends Generator {
         modelNamespace: this.modelNamespace,
       }
     );
-  }
 
-  _updateImports() {
     this.fs.copy(this.domeFilePath, this.domeFilePath, {
       process: (content) => {
         const newLine = `I${this.modelClass} ${this.modelPlural} { get; }\n\n\t\t/// generator-dome ///`;
 
-        const regEx = new RegExp("/// generator-dome ///", "g");
-        const newContent = content.toString().replace(regEx, newLine);
+        var regEx = new RegExp("/// generator-dome ///", "g");
+        var newContent = content.toString().replace(regEx, newLine);
         return newContent;
       },
     });
@@ -121,48 +111,5 @@ module.exports = class extends Generator {
         return content;
       },
     });
-  }
-
-  _updateProject() {
-    if (!this.projFileName) {
-      this.log("project file was not found");
-      return;
-    }
-
-    const xml = fs.readFileSync(this.destinationPath() + "/" + this.projFileName, "utf8");
-    const projFile = convert.xml2js(xml, {
-      compact: true,
-      ignoreComment: true,
-      spaces: 2
-    });
-
-    const compileIndex = projFile.Project.ItemGroup.findIndex(x => {
-      const keys = Object.keys(x);
-      return keys.length === 1 && keys[0] === "Compile";
-    });
-
-    projFile.Project.ItemGroup[compileIndex].Compile.push({
-      "_attributes": {
-        Include: this.interfaceFilePath.split("/").join("\\")
-      }
-    });
-
-    projFile.Project.ItemGroup[compileIndex].Compile.push({
-      "_attributes": {
-        Include: this.databaseFilePath.split("/").join("\\")
-      }
-    });
-
-    projFile.Project.ItemGroup[compileIndex].Compile.sort((a, b) => {
-      return a._attributes.Include.localeCompare(b._attributes.Include);
-    });
-
-    const newXml = convert.js2xml(projFile, {
-      compact: true,
-      ignoreComment: true,
-      spaces: 2
-    });
-
-    this.fs.write(this.projFileName, newXml);
   }
 };
