@@ -1,6 +1,6 @@
 {
   "name": "generator-dome",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "scripts": {
     "build": "copyfiles package.json README.md generators/**/* dist",
@@ -16,6 +16,7 @@
   ],
   "dependencies": {
     "plur": "^4.0.0",
+    "xml-js": "^1.6.11",
     "yeoman-generator": "^4.8.3"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "generator-dome",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "scripts": {
     "build": "copyfiles package.json README.md generators/**/* dist",
