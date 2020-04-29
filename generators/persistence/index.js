@@ -1,7 +1,6 @@
 "use strict";
 
 const Generator = require("yeoman-generator");
-const convert = require("xml-js");
 const plur = require("plur");
 const path = require("path");
 const fs = require("fs");
