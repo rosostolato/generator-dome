@@ -86,10 +86,8 @@ module.exports = class extends Generator {
     this.fs.copy(this.domeFilePath, this.domeFilePath, {
       process: (content) => {
         const newLine = `I${this.modelClass} ${this.modelPlural} { get; }\n\n\t\t/// generator-dome ///`;
-
         const regEx = new RegExp("/// generator-dome ///", "g");
-        const newContent = content.toString().replace(regEx, newLine);
-        return newContent;
+        return content.toString().replace(regEx, newLine);
       },
     });
 
@@ -101,11 +99,11 @@ module.exports = class extends Generator {
         regEx = new RegExp("/// generator-dome:lazy ///", "g");
         content = content.toString().replace(regEx, newLine);
 
-        newLine = `m_${this.modelClass} = new Lazy<I${this.modelClass}>(() => new ${this.modelClass}(m_Db));\n\t\t/// generator-dome:lazyStart1 ///`;
+        newLine = `m_${this.modelClass} = new Lazy<I${this.modelClass}>(() => new ${this.modelClass}(m_Db));\n\t\t\t/// generator-dome:lazyStart1 ///`;
         regEx = new RegExp("/// generator-dome:lazyStart1 ///", "g");
         content = content.toString().replace(regEx, newLine);
 
-        newLine = `m_${this.modelClass} = new Lazy<I${this.modelClass}>(() => new ${this.modelClass}(m_Db));\n\t\t/// generator-dome:lazyStart2 ///`;
+        newLine = `m_${this.modelClass} = new Lazy<I${this.modelClass}>(() => new ${this.modelClass}(m_Db));\n\t\t\t/// generator-dome:lazyStart2 ///`;
         regEx = new RegExp("/// generator-dome:lazyStart2 ///", "g");
         content = content.toString().replace(regEx, newLine);
 
@@ -119,53 +117,25 @@ module.exports = class extends Generator {
 
     this.fs.copy(this.domeFileFilePath, this.domeFileFilePath, {
       process: (content) => {
-        let newLine, regEx;
-
-        newLine = `public I${this.modelClass} ${this.modelPlural} { get; }\n\n\t\t/// generator-dome:property ///`;
-        regEx = new RegExp("/// generator-dome:property ///", "g");
-        content = content.toString().replace(regEx, newLine);
-
-        return content;
+        const newLine = `public I${this.modelClass} ${this.modelPlural} { get; }\n\n\t\t/// generator-dome:property ///`;
+        const regEx = new RegExp("/// generator-dome:property ///", "g");
+        return content.toString().replace(regEx, newLine);
       },
     });
   }
 
   _updateProject() {
-    const xml = fs.readFileSync(this.projFileName, "utf8");
-    const projFile = convert.xml2js(xml, {
-      compact: true,
-      ignoreComment: true,
-      spaces: 2
-    });
+    this.fs.copy(this.projFileName, this.projFileName, {
+      process: (content) => {
+        const newLineFn = (path) => `<Compile Include="${path}" />\n\t<!-- /// generator-dome /// -->`;
 
-    const compileIndex = projFile.Project.ItemGroup.findIndex(x => {
-      const keys = Object.keys(x);
-      return keys.length === 1 && keys[0] === "Compile";
-    });
+        const regEx = new RegExp("<!-- /// generator-dome /// -->", "g");
+        content = content.toString().replace(regEx, newLineFn(this._fixPath(this.interfaceFilePath)));
+        content = content.toString().replace(regEx, newLineFn(this._fixPath(this.databaseFilePath)));
 
-    projFile.Project.ItemGroup[compileIndex].Compile.push({
-      "_attributes": {
-        Include: this._fixPath(this.interfaceFilePath)
-      }
+        return content;
+      },
     });
-
-    projFile.Project.ItemGroup[compileIndex].Compile.push({
-      "_attributes": {
-        Include: this._fixPath(this.databaseFilePath)
-      }
-    });
-
-    projFile.Project.ItemGroup[compileIndex].Compile.sort((a, b) => {
-      return a._attributes.Include.localeCompare(b._attributes.Include);
-    });
-
-    const newXml = convert.js2xml(projFile, {
-      compact: true,
-      ignoreComment: true,
-      spaces: 2
-    });
-
-    this.fs.write(this.projFileName, newXml);
   }
 
   _fixPath(path) {
