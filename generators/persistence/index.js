@@ -126,7 +126,7 @@ module.exports = class extends Generator {
   _updateProject() {
     this.fs.copy(this.projFileName, this.projFileName, {
       process: (content) => {
-        const newLineFn = (path) => `<Compile Include="${path}" />\n\t<!-- /// generator-dome /// -->`;
+        const newLineFn = (path) => `<Compile Include="${path}" />\n    <!-- /// generator-dome /// -->`;
 
         const regEx = new RegExp("<!-- /// generator-dome /// -->", "g");
         content = content.toString().replace(regEx, newLineFn(this._fixPath(this.interfaceFilePath)));
