@@ -50,9 +50,15 @@ module.exports = class extends Generator {
   }
 
   writing() {
+    const exists = this.fs.exists(this.interfaceFilePath)
+      || this.fs.exists(this.databaseFilePath);
+
     this._copyTemplates();
-    this._updateProject();
-    this._updateImports();
+
+    if (!exists) {
+      this._updateProject();
+      this._updateImports();
+    }
   }
 
   end() {
@@ -116,7 +122,7 @@ module.exports = class extends Generator {
 
     this.fs.copy(this.domeFileFilePath, this.domeFileFilePath, {
       process: (content) => {
-        const newLine = `public I${this.modelClass} ${this.modelPlural} { get; }\n\n\t\t/// generator-dome:property ///`;
+        const newLine = `public I${this.modelClass} ${this.modelPlural} { get; }\n\t\t/// generator-dome:property ///`;
         const regEx = new RegExp("/// generator-dome:property ///", "g");
         return content.toString().replace(regEx, newLine);
       },
